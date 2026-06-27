@@ -1,0 +1,45 @@
+// RAG service.
+// Orchestrates the complete RAG pipeline: retrieve context → build prompt → call LLM → return answer.
+
+const retriever = require("../retrieval/retriever");
+const { buildRagPrompt } = require("../prompts/ragPrompt");
+const { getSystemPrompt } = require("../prompts/systemPrompt");
+const { generateResponse } = require("../llm/llmClient");
+const conversationStore = require("../memory/conversationStore");
+
+const answer = async (question, userId, conversationId) => {
+  const conversation = await conversationStore.findOrCreate(conversationId, userId);
+
+  const contextChunks = await retriever.retrieve(question, 5);
+
+  const systemPrompt = getSystemPrompt();
+  const userPrompt = buildRagPrompt(contextChunks, question);
+
+  const history = conversation.messages.slice(-10).map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+  }));
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...history,
+    { role: "user", content: userPrompt },
+  ];
+
+  const answerText = await generateResponse(messages);
+
+  await conversationStore.addMessage(conversation._id, "user", question);
+  await conversationStore.addMessage(conversation._id, "assistant", answerText);
+
+  return {
+    answer: answerText,
+    conversationId: conversation._id,
+    sources: contextChunks.map((c) => ({
+      text: c.text.slice(0, 200),
+      score: c.combinedScore,
+      metadata: c.metadata,
+    })),
+  };
+};
+
+module.exports = { answer };
