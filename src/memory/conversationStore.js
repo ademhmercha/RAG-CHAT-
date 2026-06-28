@@ -21,6 +21,11 @@ const addMessage = async (conversationId, role, content) => {
   const conversation = await Conversation.findById(conversationId);
   if (!conversation) throw new Error("Conversation not found");
 
+  if (role === "user" && conversation.title === "New Conversation") {
+    const title = content.length > 60 ? content.slice(0, 57) + "..." : content;
+    conversation.title = title;
+  }
+
   conversation.messages.push({ role, content, timestamp: new Date() });
   return conversation.save();
 };

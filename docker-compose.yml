@@ -1,46 +1,78 @@
-version: "3.9"
-
 services:
+  # ─── Backend (Node.js + Express) ─────────────────────────
   app:
     build: .
     container_name: rag-app
     ports:
       - "3000:3000"
     env_file: .env
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=1024
     depends_on:
-      - mongo
-      - chroma
-      - redis
+      mongo:
+        condition: service_started
+      chroma:
+        condition: service_started
+      redis:
+        condition: service_started
+      ollama:
+        condition: service_started
     volumes:
       - ./uploads:/app/uploads
       - ./logs:/app/logs
     restart: unless-stopped
 
+  # ─── Frontend (React + Nginx) ────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: rag-frontend
+    ports:
+      - "3001:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # ─── MongoDB ─────────────────────────────────────────────
   mongo:
     image: mongo:7
     container_name: rag-mongo
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     restart: unless-stopped
 
+  # ─── ChromaDB ────────────────────────────────────────────
   chroma:
     image: chromadb/chroma:latest
     container_name: rag-chroma
-    ports:
-      - "8000:8000"
     volumes:
       - chroma-data:/chroma/chroma
     restart: unless-stopped
 
+  # ─── Redis ───────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: rag-redis
-    ports:
-      - "6379:6379"
     restart: unless-stopped
+
+  # ─── Ollama (Free LLM + Embeddings) ──────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag-ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list 2>/dev/null && echo ok || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 60
+      start_period: 60s
 
 volumes:
   mongo-data:
   chroma-data:
+  ollama-data:

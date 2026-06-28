@@ -27,6 +27,12 @@ const config = {
     temperature: parseFloat(process.env.OPENAI_TEMPERATURE) || 0.7,
   },
 
+  ollama: {
+    host: process.env.OLLAMA_HOST || "http://ollama:11434",
+    model: process.env.OLLAMA_MODEL || "llama3.2",
+    embeddingModel: process.env.OLLAMA_EMBEDDING_MODEL || "nomic-embed-text",
+  },
+
   chroma: {
     host: process.env.CHROMA_HOST || "localhost",
     port: parseInt(process.env.CHROMA_PORT, 10) || 8000,

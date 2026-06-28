@@ -1,14 +1,11 @@
-// Embedder dispatcher.
-// Delegates embedding generation to the configured provider (OpenAI).
-
-const openaiEmbedding = require("./openaiEmbedding");
+const ollamaEmbedding = require("./ollamaEmbedding");
 
 const generateEmbedding = async (text) => {
-  return openaiEmbedding.generate(text);
+  return ollamaEmbedding.generate(text);
 };
 
 const generateEmbeddings = async (texts) => {
-  return openaiEmbedding.generateBatch(texts);
+  return ollamaEmbedding.generateBatch(texts);
 };
 
 module.exports = { generateEmbedding, generateEmbeddings };

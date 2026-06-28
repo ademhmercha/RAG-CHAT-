@@ -7,6 +7,7 @@ const config = require("./config");
 const app = require("./src/app");
 const { info, error } = require("./src/utils/logger");
 const databaseConfig = require("./config/database");
+const { init: initOllama } = require("./src/llm/initOllama");
 
 const server = http.createServer(app);
 
@@ -19,6 +20,7 @@ mongoose
     info("Connected to MongoDB");
     server.listen(config.port, () => {
       info(`Server running on port ${config.port} [${config.env}]`);
+      initOllama();
     });
   })
   .catch((err) => {

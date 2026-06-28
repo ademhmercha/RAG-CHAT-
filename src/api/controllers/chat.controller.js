@@ -1,7 +1,7 @@
 // Chat controller.
 // Receives a question from the user and delegates to the RAG service.
 
-const { ragService } = require("../../services/rag.service");
+const ragService = require("../../services/rag.service");
 
 const chatController = {
   async ask(req, res, next) {

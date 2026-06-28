@@ -18,7 +18,15 @@ const conversationSchema = new mongoose.Schema(
     title: { type: String, default: "New Conversation" },
     messages: [messageSchema],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+conversationSchema.virtual("messageCount").get(function () {
+  return this.messages?.length || 0;
+});
 
 module.exports = mongoose.model("Conversation", conversationSchema);

@@ -1,173 +1,141 @@
-# rag-nodejs
+# RAG Chat
 
-A production-ready **Retrieval-Augmented Generation (RAG)** system built with Node.js, Express, MongoDB, ChromaDB, and OpenAI.
+A fully local, free **Retrieval-Augmented Generation (RAG)** chat application with a ChatGPT-style UI. Uses **Ollama** (no OpenAI API key needed) and runs entirely via **Docker Compose**.
+
+## Features
+
+- **ChatGPT-style UI** — dark/light theme, conversation history, streaming-ready
+- **100% Free & Local** — Ollama runs `llama3.2` (LLM) and `nomic-embed-text` (embeddings) on your machine
+- **RAG Pipeline** — upload documents (PDF, DOCX, TXT, CSV, HTML, MD) → chunk → embed → store → retrieve → answer
+- **Document Management** — upload, track status, delete documents (cleans vectors too)
+- **Conversation History** — auto-titled, searchable, deletable
+- **Async Upload** — upload returns immediately, ingestion runs in background
+- **Docker Compose** — single command to spin up everything
 
 ## Architecture
 
-The project follows **Clean Architecture** principles with strict **Separation of Concerns**:
-
 ```
-Client Request
-    │
-    ▼
-Routes ──► Controllers ──► Middleware
-                                │
-                                ▼
-                          Services (Business Logic)
-                                │
-              ┌─────────────────┼─────────────────┐
-              ▼                 ▼                 ▼
-        Repositories        LLM Client        Vector Store
-              │                 │                 │
-              ▼                 ▼                 ▼
-          MongoDB             OpenAI            ChromaDB
+┌──────────┐     ┌──────────┐     ┌──────────┐
+│  Nginx   │────▶│  Node.js │────▶│ MongoDB  │
+│ (React)  │     │ (Express)│     │ (Auth,   │
+│ :3001    │     │ :3000    │     │  Conv)   │
+└──────────┘     └────┬─────┘     └──────────┘
+                      │
+              ┌───────┴───────┐
+              ▼               ▼
+         ┌──────────┐   ┌──────────┐
+         │ Ollama   │   │ ChromaDB │
+         │ :11434   │   │ :8000    │
+         └──────────┘   └──────────┘
+              │               │
+         ┌────┴────┐    ┌────┴────┐
+         │ llama3.2│    │ Vectors │
+         │ nomic-  │    │ Store   │
+         │ embed   │    └─────────┘
+         └─────────┘
 ```
 
-## Folder Structure
+## Services
 
-| Directory          | Responsibility                                    |
-|--------------------|---------------------------------------------------|
-| `config/`          | Centralized configuration for DB, LLM, etc.       |
-| `src/api/routes/`  | Express route definitions                         |
-| `src/api/controllers/` | Request/response handling (thin layer)        |
-| `src/api/validators/` | Request payload validation                     |
-| `src/middleware/`   | Auth, error handling, logging, upload, rate-limit |
-| `src/ingestion/`    | Extract text from PDFs, Word, HTML, URLs, etc.    |
-| `src/preprocessing/` | Clean, normalize, detect language of text        |
-| `src/chunking/`     | Split text into chunks (recursive, semantic)      |
-| `src/embeddings/`   | Generate vector embeddings via OpenAI             |
-| `src/vectordb/`     | ChromaDB client — store and query vectors         |
-| `src/retrieval/`    | Similarity search, reranking, retrieval pipeline  |
-| `src/prompts/`      | Centralized prompt templates                      |
-| `src/llm/`          | LLM client (OpenAI) — prompt completion           |
-| `src/memory/`       | Conversation memory / history tracking            |
-| `src/services/`     | Business logic layer — orchestrates pipeline      |
-| `src/repositories/` | MongoDB data access (Mongoose models)             |
-| `src/database/`     | MongoDB connection setup                          |
-| `src/models/`       | Mongoose schemas (User, Document, Conversation)   |
-| `src/sockets/`      | Socket.io real-time event handling                |
-| `src/cache/`        | Redis caching layer                               |
-| `src/storage/`      | Local filesystem storage for uploads              |
-| `src/utils/`        | Shared utilities (helpers, constants, logger)     |
-| `src/exceptions/`   | Custom error classes                              |
+| Service    | Role                          | Port  |
+|------------|-------------------------------|-------|
+| `app`      | Node.js + Express API         | 3000  |
+| `frontend` | React SPA served by Nginx     | 3001  |
+| `mongo`    | MongoDB (auth, conversations) | 27017 |
+| `chroma`   | ChromaDB (vector store)       | 8000  |
+| `redis`    | Redis (cache / rate-limit)    | 6379  |
+| `ollama`   | Ollama (LLM + embeddings)     | 11434 |
 
-## Installation
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone <repo-url> && cd rag-nodejs
+# Clone
+git clone <repo-url> && cd rag-chat
 
-# Install dependencies
-npm install
-
-# Copy environment variables
+# Copy env
 cp .env.example .env
 
-# Edit .env with your values (MongoDB URI, OpenAI key, etc.)
+# Start everything
+docker compose up -d --build
+
+# Wait for Ollama models to download (~5 min first time)
+docker compose logs app -f
+
+# Open
+open http://localhost:3001
 ```
 
-## Running the Project
-
-```bash
-# Development mode with hot-reload
-npm run dev
-
-# Production mode
-npm start
-
-# Run tests
-npm test
-```
+Ollama automatically pulls `llama3.2` (2 GB) and `nomic-embed-text` (274 MB) on first startup. Subsequent starts are instant.
 
 ## Environment Variables
 
 | Variable                  | Description                   | Default                     |
 |---------------------------|-------------------------------|-----------------------------|
 | `PORT`                    | Server port                   | `3000`                      |
-| `MONGODB_URI`             | MongoDB connection string     | `mongodb://localhost:27017` |
+| `MONGODB_URI`             | MongoDB connection string     | `mongodb://mongo:27017`     |
 | `JWT_SECRET`              | JWT signing secret            | —                           |
-| `JWT_EXPIRES_IN`          | JWT expiration duration       | `7d`                        |
-| `OPENAI_API_KEY`          | OpenAI API key                | —                           |
-| `OPENAI_MODEL`            | LLM model name                | `gpt-4o-mini`               |
-| `OPENAI_EMBEDDING_MODEL`  | Embedding model name          | `text-embedding-3-small`    |
-| `CHROMA_HOST`             | ChromaDB host                 | `localhost`                 |
+| `OLLAMA_HOST`             | Ollama server URL             | `http://ollama:11434`       |
+| `OLLAMA_MODEL`            | LLM model name                | `llama3.2`                  |
+| `OLLAMA_EMBEDDING_MODEL`  | Embedding model name          | `nomic-embed-text`          |
+| `CHROMA_HOST`             | ChromaDB host                 | `chroma`                    |
 | `CHROMA_PORT`             | ChromaDB port                 | `8000`                      |
-| `REDIS_URL`               | Redis connection URL          | `redis://localhost:6379`    |
-| `LOG_LEVEL`               | Winston log level             | `info`                      |
+| `REDIS_URL`               | Redis connection URL          | `redis://redis:6379`        |
+| `JWT_EXPIRES_IN`          | JWT expiration duration       | `7d`                        |
+| `MAX_FILE_SIZE`           | Max upload size in bytes      | `52428800` (50 MB)          |
 
 ## RAG Pipeline
 
 ```
-PDF / Word / TXT / CSV / HTML / URL / YouTube
-                    │
-                    ▼
-          ┌─────────────────┐
-          │   Ingestion     │  Extract raw text
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │  Preprocessing  │  Clean & normalize text
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │    Chunking     │  Split into chunks
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │   Embeddings    │  Generate vectors (OpenAI)
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │   ChromaDB      │  Store vectors
-          └────────┬────────┘
-                   │
-        ┌──────────┴──────────┐
-        │                     │
-        ▼                     ▼
-   User Question       Generate Query Embedding
-        │                     │
-        └──────────┬──────────┘
-                   ▼
-          ┌─────────────────┐
-          │  Similarity     │  Search ChromaDB
-          │    Search       │
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │   Re-ranker     │  Re-rank top chunks
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │  Build Prompt   │  Context + Question
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │  Call OpenAI    │  Generate answer
-          └────────┬────────┘
-                   ▼
-          ┌─────────────────┐
-          │   Response      │  Return answer to user
-          └─────────────────┘
+Upload Document (PDF/DOCX/TXT/CSV/HTML/MD)
+        │
+        ▼
+  Parse text ──► Clean & normalize ──► Chunk ──► Embed (Ollama) ──► Store in ChromaDB
+                                                                         │
+User Question ───────────────────────────────────────────────────────────┤
+                                                                         │
+        ◄──── Generate answer (Ollama) ◄──── Build prompt ◄──── Retrieve top chunks
 ```
 
 ## API Endpoints
 
-| Method | Endpoint         | Description                  | Auth Required |
-|--------|------------------|------------------------------|---------------|
-| GET    | `/health`        | Health check                 | No            |
-| POST   | `/api/chat`      | Ask a question (RAG)         | Yes           |
-| POST   | `/api/upload`    | Upload a document            | Yes           |
-| GET    | `/api/documents` | List all uploaded documents  | Yes           |
+| Method | Endpoint                   | Description                | Auth |
+|--------|----------------------------|----------------------------|------|
+| POST   | `/api/auth/register`       | Create account             | No   |
+| POST   | `/api/auth/login`          | Sign in                    | No   |
+| GET    | `/api/auth/me`             | Current user               | Yes  |
+| POST   | `/api/chat`                | Ask a question (RAG)       | Yes  |
+| GET    | `/api/conversations`       | List conversations         | Yes  |
+| GET    | `/api/conversations/:id`   | Get conversation messages  | Yes  |
+| PATCH  | `/api/conversations/:id`   | Rename conversation        | Yes  |
+| DELETE | `/api/conversations/:id`   | Delete conversation        | Yes  |
+| POST   | `/api/upload`              | Upload a document          | Yes  |
+| GET    | `/api/documents`           | List documents             | Yes  |
+| DELETE | `/api/documents/:id`       | Delete document + vectors  | Yes  |
+| GET    | `/health`                  | Health check               | No   |
 
-## Future Improvements
+## Project Structure
 
-- Async background job queue (Bull / RabbitMQ) for large document ingestion
-- Multi-tenant support with isolated collections per user
-- Webhook notifications when ingestion completes
-- Streaming responses from OpenAI (SSE)
-- Caching frequent queries via Redis
-- Frontend dashboard (React / Next.js)
-- PGVector / Qdrant support as alternative vector stores
-- LLM guardrails and content moderation
-- Rate limiting per user tier
-- Full-text search fallback (MongoDB Atlas Search)
+```
+├── frontend/              # React + Tailwind + Vite
+│   ├── src/
+│   │   ├── components/    # Chat, Documents, Layout
+│   │   ├── context/       # AuthContext, ThemeContext
+│   │   └── pages/         # Chat, Login, Register, Documents, Upload
+│   ├── nginx.conf         # SPA fallback + API proxy
+│   └── Dockerfile
+├── src/
+│   ├── api/               # Routes, Controllers, Validators
+│   ├── ingestion/         # PDF, DOCX, HTML parsing
+│   ├── chunking/          # Text chunking strategies
+│   ├── embeddings/        # Ollama embedding client
+│   ├── vectordb/          # ChromaDB client
+│   ├── retrieval/         # Similarity search + reranking
+│   ├── llm/               # Ollama LLM client
+│   ├── services/          # Business logic
+│   ├── models/            # Mongoose schemas
+│   ├── middleware/         # Auth, error handling, upload
+│   └── memory/            # Conversation history
+├── docker-compose.yml     # All 6 services
+├── Dockerfile             # Backend
+└── .env.example
+```

@@ -12,8 +12,12 @@ const search = async (queryEmbedding, topK = 5) => {
   return chroma.query(queryEmbedding, topK);
 };
 
+const deleteByDocumentId = async (documentId) => {
+  return chroma.deleteByDocumentId(documentId);
+};
+
 const deleteCollection = async () => {
   return chroma.deleteCollection();
 };
 
-module.exports = { store, search, deleteCollection };
+module.exports = { store, search, deleteByDocumentId, deleteCollection };

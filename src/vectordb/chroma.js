@@ -52,10 +52,16 @@ const query = async (queryEmbedding, topK = 5) => {
   return result;
 };
 
+const deleteByDocumentId = async (documentId) => {
+  const col = await ensureCollection();
+  await col.delete({ where: { documentId } });
+  info(`Deleted vectors for document ${documentId}`);
+};
+
 const deleteCollection = async () => {
   const c = getClient();
   await c.deleteCollection({ name: vectordbConfig.collection });
   collection = null;
 };
 
-module.exports = { ensureCollection, addDocuments, query, deleteCollection };
+module.exports = { ensureCollection, addDocuments, query, deleteByDocumentId, deleteCollection };

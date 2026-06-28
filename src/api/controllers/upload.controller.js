@@ -1,7 +1,7 @@
 // Upload controller.
 // Handles file upload and triggers the ingestion pipeline.
 
-const { uploadService } = require("../../services/upload.service");
+const uploadService = require("../../services/upload.service");
 
 const uploadController = {
   async upload(req, res, next) {

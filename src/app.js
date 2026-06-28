@@ -8,9 +8,11 @@ const morgan = require("morgan");
 const config = require("../config");
 
 const healthRoutes = require("./api/routes/health.routes");
+const authRoutes = require("./api/routes/auth.routes");
 const chatRoutes = require("./api/routes/chat.routes");
 const uploadRoutes = require("./api/routes/upload.routes");
 const documentRoutes = require("./api/routes/document.routes");
+const conversationRoutes = require("./api/routes/conversation.routes");
 
 const { errorMiddleware } = require("./middleware/error.middleware");
 const { loggerMiddleware } = require("./middleware/logger.middleware");
@@ -33,9 +35,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- Routes ---
 app.use("/health", healthRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/conversations", conversationRoutes);
 
 // --- Central error handler ---
 app.use(errorMiddleware);
