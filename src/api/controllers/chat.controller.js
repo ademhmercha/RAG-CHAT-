@@ -19,6 +19,23 @@ const chatController = {
       next(err);
     }
   },
+
+  async askStream(req, res, next) {
+    try {
+      const { question, conversationId } = req.body;
+      const userId = req.user.id;
+
+      res.json({ success: true, message: "Streaming started" });
+
+      ragService.answerStream(question, userId, conversationId).catch((err) => {
+        const { emitToUser } = require("../../sockets/socket");
+        emitToUser(userId, "chat:error", { message: err.message || "Streaming failed", conversationId });
+      });
+    } catch (err) {
+      const { emitToUser } = require("../../sockets/socket");
+      emitToUser(req.user?.id, "chat:error", { message: err.message || "Failed to start stream", conversationId });
+    }
+  },
 };
 
 module.exports = { chatController };

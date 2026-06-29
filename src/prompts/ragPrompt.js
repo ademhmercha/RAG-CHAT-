@@ -3,7 +3,10 @@
 
 const buildRagPrompt = (contextChunks, question) => {
   const context = contextChunks
-    .map((chunk, i) => `[${i + 1}] ${chunk.text}`)
+    .map((chunk, i) => {
+      const source = chunk.metadata?.filename || chunk.metadata?.source || "Unknown";
+      return `[${i + 1}] (Source: ${source}) ${chunk.text}`;
+    })
     .join("\n\n");
 
   return `
@@ -14,7 +17,7 @@ ${context}
 
 Question: ${question}
 
-Answer based on the context above. If the context does not contain the answer, say so.`;
+Answer based on the context above. If the context does not contain enough information, say so.`;
 };
 
 module.exports = { buildRagPrompt };

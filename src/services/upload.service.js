@@ -17,7 +17,8 @@ const processInBackground = async (docRecord, filePath, originalname) => {
     const rawText = await loadFromFile(filePath, docRecord.mimeType);
     const cleaned = clean(rawText);
     const normalized = normalize(cleaned);
-    const textChunks = chunk(normalized, "recursive", { maxLength: 1000, overlap: 200 });
+    const truncated = normalized.slice(0, 100000);
+    const textChunks = chunk(truncated, "recursive", { maxLength: 1000, overlap: 200 });
 
     const embeddings = await generateEmbeddings(textChunks);
     const ids = textChunks.map((_, i) => `${docRecord._id}-chunk-${i}`);
@@ -62,4 +63,22 @@ const processUpload = async (file, userId) => {
   return docRecord;
 };
 
-module.exports = { processUpload };
+const recoverPending = async () => {
+  try {
+    const pending = await documentRepository.findPending();
+    for (const doc of pending) {
+      info(`Recovering pending document: ${doc._id} (${doc.filename})`);
+      if (doc.filePath && require("fs").existsSync(doc.filePath)) {
+        processInBackground(doc, doc.filePath, doc.filename);
+      } else {
+        doc.status = "failed";
+        doc.error = "File not found on disk after restart";
+        await doc.save();
+      }
+    }
+  } catch (err) {
+    error("Failed to recover pending documents", err);
+  }
+};
+
+module.exports = { processUpload, recoverPending };

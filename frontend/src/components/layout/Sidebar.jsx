@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { NavLink, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -12,7 +12,11 @@ import {
   HiOutlineChatBubbleOvalLeftEllipsis,
   HiOutlineSun,
   HiOutlineMoon,
+  HiOutlineCheck,
+  HiOutlineXMark,
+  HiOutlinePencilSquare,
 } from "react-icons/hi2";
+import ConfirmDialog from "../ui/ConfirmDialog";
 
 const navItems = [
   { to: "/chat", label: "Chat", icon: HiOutlineChatBubbleLeftRight },
@@ -28,8 +32,13 @@ export default function Sidebar({ open, onClose }) {
   const location = useLocation();
   const [convos, setConvos] = useState([]);
   const [loadingConvos, setLoadingConvos] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameInput, setRenameInput] = useState("");
+  const renameRef = useRef(null);
 
-  const fetchConvos = async () => {
+  const fetchConvos = useCallback(async () => {
     try {
       setLoadingConvos(true);
       const res = await conversationsApi.list();
@@ -39,22 +48,68 @@ export default function Sidebar({ open, onClose }) {
     } finally {
       setLoadingConvos(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchConvos();
-  }, [location.pathname]);
+  }, [location.pathname, fetchConvos]);
 
   const handleNewChat = () => {
     navigate("/chat");
     onClose?.();
   };
 
-  const handleDelete = async (e, id) => {
+  const handleDeleteClick = (e, id) => {
     e.stopPropagation();
-    await conversationsApi.remove(id);
-    setConvos((prev) => prev.filter((c) => c._id !== id));
-    if (conversationId === id) navigate("/chat");
+    setConfirmDelete(id);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await conversationsApi.remove(confirmDelete);
+      setConvos((prev) => prev.filter((c) => c._id !== confirmDelete));
+      if (conversationId === confirmDelete) navigate("/chat");
+    } catch {
+      /* ignore */
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(null);
+    }
+  };
+
+  const handleRenameStart = (e, id, currentTitle) => {
+    e.stopPropagation();
+    setRenamingId(id);
+    setRenameInput(currentTitle || "");
+    setTimeout(() => renameRef.current?.select(), 50);
+  };
+
+  const handleRenameSubmit = async (id) => {
+    const trimmed = renameInput.trim();
+    if (!trimmed || trimmed.length === 0) {
+      setRenamingId(null);
+      return;
+    }
+    try {
+      await conversationsApi.rename(id, trimmed);
+      setConvos((prev) => prev.map((c) => (c._id === id ? { ...c, title: trimmed } : c)));
+    } catch {
+      /* ignore */
+    }
+    setRenamingId(null);
+  };
+
+  const handleRenameKeyDown = (e, id) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleRenameSubmit(id);
+    }
+    if (e.key === "Escape") {
+      setRenamingId(null);
+    }
+    e.stopPropagation();
   };
 
   const isOnChat = location.pathname.startsWith("/chat");
@@ -68,7 +123,19 @@ export default function Sidebar({ open, onClose }) {
           ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0
           sidebar-bg border-r border-[var(--border)] flex flex-col`}
       >
-        <div className="p-3 border-b border-[var(--border)]">
+        <div className="p-4 border-b border-[var(--border)] flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="RAG Assistant"
+            className="w-8 h-8 rounded-lg object-cover"
+          />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-semibold text-[var(--text-primary)] truncate">RAG Assistant</h1>
+            <p className="text-[10px] text-[var(--text-tertiary)] truncate">Intelligent Search</p>
+          </div>
+        </div>
+
+        <div className="p-3">
           <button
             onClick={handleNewChat}
             className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-colors text-sm"
@@ -93,29 +160,54 @@ export default function Sidebar({ open, onClose }) {
           ) : (
             convos.map((conv) => {
               const isActive = conv._id === conversationId;
+              const isRenaming = renamingId === conv._id;
               return (
-                <button
+                <div
                   key={conv._id}
-                  onClick={() => {
-                    navigate(`/chat/${conv._id}`);
-                    onClose?.();
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 group
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 group cursor-pointer
                     ${isActive
                       ? "bg-[var(--bg-card)] text-[var(--text-primary)]"
                       : "text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
                     }`}
+                  onClick={() => {
+                    navigate(`/chat/${conv._id}`);
+                    onClose?.();
+                  }}
                 >
                   <HiOutlineChatBubbleLeftRight className="w-4 h-4 shrink-0" />
-                  <span className="flex-1 text-xs truncate">{conv.title}</span>
+                  {isRenaming ? (
+                    <div className="flex-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        ref={renameRef}
+                        value={renameInput}
+                        onChange={(e) => setRenameInput(e.target.value)}
+                        onKeyDown={(e) => handleRenameKeyDown(e, conv._id)}
+                        onBlur={() => handleRenameSubmit(conv._id)}
+                        className="flex-1 text-xs bg-[var(--bg-input)] border border-[var(--border)] rounded px-1.5 py-0.5 text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                      />
+                      <button onClick={() => handleRenameSubmit(conv._id)} className="p-0.5 rounded hover:text-[var(--accent)]">
+                        <HiOutlineCheck className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => setRenamingId(null)} className="p-0.5 rounded hover:text-[var(--text-primary)]">
+                        <HiOutlineXMark className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span
+                      className="flex-1 text-xs truncate"
+                      onDoubleClick={(e) => handleRenameStart(e, conv._id, conv.title)}
+                    >
+                      {conv.title}
+                    </span>
+                  )}
                   <span className="text-[10px] text-[var(--text-tertiary)] shrink-0">{conv.messageCount || 0}</span>
                   <button
-                    onClick={(e) => handleDelete(e, conv._id)}
+                    onClick={(e) => { e.stopPropagation(); setRenamingId(null); handleDeleteClick(e, conv._id); }}
                     className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--bg-card-hover)] text-[var(--text-tertiary)] hover:text-red-400 transition-all"
                   >
                     <HiOutlineTrash className="w-3 h-3" />
                   </button>
-                </button>
+                </div>
               );
             })
           )}
@@ -164,6 +256,16 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Delete conversation"
+        message="Are you sure you want to delete this conversation? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDelete(null)}
+        loading={deleting}
+      />
     </>
   );
 }

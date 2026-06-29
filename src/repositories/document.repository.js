@@ -26,4 +26,8 @@ const updateStatus = async (documentId, status, error = null) => {
   return Document.findByIdAndUpdate(documentId, update, { new: true });
 };
 
-module.exports = { create, findByUserId, findByIdAndUser, deleteById, updateStatus };
+const findPending = async () => {
+  return Document.find({ status: "pending" }).sort({ createdAt: 1 });
+};
+
+module.exports = { create, findByUserId, findByIdAndUser, deleteById, updateStatus, findPending };

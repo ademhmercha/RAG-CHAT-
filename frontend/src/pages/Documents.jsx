@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { HiOutlineMagnifyingGlass, HiOutlineArchiveBoxXMark } from "react-icons/hi2";
 import { documents as documentsApi } from "../api/client";
 import DocumentCard from "../components/documents/DocumentCard";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import toast from "react-hot-toast";
 
 const tabs = ["all", "completed", "processing", "pending", "failed"];
@@ -11,6 +12,8 @@ export default function Documents() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -28,13 +31,18 @@ export default function Documents() {
     fetchDocuments();
   }, [fetchDocuments]);
 
-  const handleDelete = async (id) => {
+  const handleDeleteConfirm = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
     try {
-      await documentsApi.remove(id);
-      setDocs((prev) => prev.filter((d) => d._id !== id));
+      await documentsApi.remove(confirmDelete);
+      setDocs((prev) => prev.filter((d) => d._id !== confirmDelete));
       toast.success("Document deleted");
+      setConfirmDelete(null);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete document");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -102,12 +110,22 @@ export default function Documents() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filtered.map((doc, i) => (
               <div key={doc._id} className="animate-in" style={{ animationDelay: `${i * 0.02}s` }}>
-                <DocumentCard document={doc} onDelete={handleDelete} />
+                <DocumentCard document={doc} onDelete={setConfirmDelete} />
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Delete document"
+        message="Are you sure you want to delete this document? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDelete(null)}
+        loading={deleting}
+      />
     </div>
   );
 }

@@ -19,7 +19,11 @@ const remove = async (documentId, userId) => {
     fs.unlink(doc.filePath, () => {});
   }
 
-  vectorStore.deleteByDocumentId(documentId).catch(() => {});
+  try {
+    await vectorStore.deleteByDocumentId(documentId);
+  } catch (e) {
+    // ignore vector deletion errors
+  }
 
   await documentRepository.deleteById(documentId, userId);
 

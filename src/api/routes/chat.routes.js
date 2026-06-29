@@ -10,5 +10,6 @@ const { authMiddleware } = require("../../middleware/auth.middleware");
 const router = Router();
 
 router.post("/", authMiddleware, validate(chatSchema), chatController.ask);
+router.post("/stream", authMiddleware, validate(chatSchema), chatController.askStream);
 
 module.exports = router;

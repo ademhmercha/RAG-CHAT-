@@ -19,7 +19,10 @@ export default function Layout() {
           >
             <HiOutlineBars3 className="w-5 h-5 text-[var(--text-primary)]" />
           </button>
-          <span className="font-semibold text-sm text-[var(--text-primary)]">RAG Assistant</span>
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="RAG Assistant" className="w-6 h-6 rounded-md object-cover" />
+            <span className="font-semibold text-sm text-[var(--text-primary)]">RAG Assistant</span>
+          </div>
           <div className="w-9" />
         </header>
 

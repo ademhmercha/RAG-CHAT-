@@ -33,6 +33,7 @@ export const auth = {
 
 export const chat = {
   ask: (data) => api.post("/api/chat", data),
+  askStream: (data) => api.post("/api/chat/stream", data),
 };
 
 export const documents = {

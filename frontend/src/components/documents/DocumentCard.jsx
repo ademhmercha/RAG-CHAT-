@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { HiOutlineTrash, HiOutlineClock, HiOutlineCheckCircle, HiOutlineXCircle, HiOutlineCpuChip } from "react-icons/hi2";
 
 const statusConfig = {
@@ -29,14 +28,10 @@ export default function DocumentCard({ document: doc, onDelete }) {
   const status = statusConfig[doc.status] || statusConfig.pending;
   const StatusIcon = status.icon;
   const ext = getExt(doc.filename);
-  const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = async (e) => {
+  const handleDelete = (e) => {
     e.stopPropagation();
-    if (deleting) return;
-    setDeleting(true);
-    await onDelete?.(doc._id);
-    setDeleting(false);
+    onDelete?.(doc._id);
   };
 
   return (
@@ -74,15 +69,10 @@ export default function DocumentCard({ document: doc, onDelete }) {
 
       <button
         onClick={handleDelete}
-        disabled={deleting}
         className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all
           hover:bg-red-400/10 text-[var(--text-tertiary)] hover:text-red-400"
       >
-        {deleting ? (
-          <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-        ) : (
-          <HiOutlineTrash className="w-3.5 h-3.5" />
-        )}
+        <HiOutlineTrash className="w-3.5 h-3.5" />
       </button>
     </div>
   );
