@@ -35,6 +35,12 @@ A fully local, free **Retrieval-Augmented Generation (RAG)** chat application wi
          └─────────┘
 ```
 
+## Screenshots
+
+| Chat | Documents |
+|------|-----------|
+| ![Chat](frontend/public/rag%20chat%20page.png) | ![Documents](frontend/public/rag%20docments%20page.png) |
+
 ## Services
 
 | Service    | Role                          | Port  |
