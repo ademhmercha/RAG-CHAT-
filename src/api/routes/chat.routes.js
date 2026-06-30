@@ -6,10 +6,11 @@ const { chatController } = require("../controllers/chat.controller");
 const { validate } = require("../../middleware/validation.middleware");
 const { chatSchema } = require("../validators/chat.validator");
 const { authMiddleware } = require("../../middleware/auth.middleware");
+const { chatRateLimiter } = require("../../middleware/rateLimiter.middleware");
 
 const router = Router();
 
-router.post("/", authMiddleware, validate(chatSchema), chatController.ask);
-router.post("/stream", authMiddleware, validate(chatSchema), chatController.askStream);
+router.post("/", authMiddleware, chatRateLimiter, validate(chatSchema), chatController.ask);
+router.post("/stream", authMiddleware, chatRateLimiter, validate(chatSchema), chatController.askStream);
 
 module.exports = router;

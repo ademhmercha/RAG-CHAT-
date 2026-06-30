@@ -92,7 +92,7 @@ export default function Chat() {
       });
     };
 
-    const handleDone = ({ conversationId: cid, answer, sources }) => {
+    const handleDone = ({ conversationId: cid, answer, sources, providerUsed, fallbackOccurred }) => {
       if (activeConvIdRef.current && cid !== activeConvIdRef.current) return;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
@@ -100,6 +100,7 @@ export default function Chat() {
           const updated = [...prev];
           updated[updated.length - 1] = {
             role: "assistant", content: answer, sources: sources || [], timestamp: new Date().toISOString(),
+            providerUsed, fallbackOccurred,
           };
           return updated;
         }
@@ -110,6 +111,14 @@ export default function Chat() {
       if (!activeConvIdRef.current) {
         navigate(`/chat/${cid}`, { replace: true });
       }
+    };
+
+    const handleFallback = ({ fromProvider, toProvider }) => {
+      toast(`Fell back from ${fromProvider} to ${toProvider}`, {
+        icon: "⚠️",
+        duration: 4000,
+        style: { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border)" },
+      });
     };
 
     const handleError = ({ message, conversationId: cid }) => {
@@ -127,11 +136,13 @@ export default function Chat() {
 
     socket.on("chat:token", handleToken);
     socket.on("chat:done", handleDone);
+    socket.on("chat:fallback", handleFallback);
     socket.on("chat:error", handleError);
 
     return () => {
       socket.off("chat:token", handleToken);
       socket.off("chat:done", handleDone);
+      socket.off("chat:fallback", handleFallback);
       socket.off("chat:error", handleError);
     };
   }, [socket, navigate]);

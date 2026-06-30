@@ -282,6 +282,7 @@ const callGeminiStream = async (messages, options, onToken) => {
 const generateResponse = async (messages, options = {}) => {
   const errors = [];
   const providersToTry = options.provider ? [options.provider] : PRIORITY;
+  const firstProvider = providersToTry[0];
 
   for (const provider of providersToTry) {
     if (provider !== PROVIDERS.OLLAMA) {
@@ -321,7 +322,13 @@ const generateResponse = async (messages, options = {}) => {
       }
       await logUsage(provider, cfg?.model || "unknown", options, Date.now() - start, true);
       console.warn(`[LLM Router] ✓ ${provider}`);
-      return result;
+      return {
+        text: result,
+        providerUsed: provider,
+        modelUsed: cfg?.model || "unknown",
+        fallbackOccurred: provider !== firstProvider,
+        attemptedProviders: errors.map(e => e.provider),
+      };
     } catch (err) {
       const reason = err.response
         ? `HTTP ${err.response.status}`
@@ -341,6 +348,7 @@ const generateResponse = async (messages, options = {}) => {
 const generateResponseStream = async (messages, options = {}, onToken) => {
   const errors = [];
   const providersToTry = options.provider ? [options.provider] : PRIORITY;
+  const firstProvider = providersToTry[0];
 
   for (const provider of providersToTry) {
     if (provider !== PROVIDERS.OLLAMA) {
@@ -380,7 +388,13 @@ const generateResponseStream = async (messages, options = {}, onToken) => {
       }
       await logUsage(provider, cfg?.model || "unknown", options, Date.now() - start, true);
       console.warn(`[LLM Router] ✓ ${provider} (stream)`);
-      return result;
+      return {
+        text: result,
+        providerUsed: provider,
+        modelUsed: cfg?.model || "unknown",
+        fallbackOccurred: provider !== firstProvider,
+        attemptedProviders: errors.map(e => e.provider),
+      };
     } catch (err) {
       const reason = err.response
         ? `HTTP ${err.response.status}`

@@ -73,6 +73,11 @@ export default function ChatMessage({ message }) {
             )}
 
             <div className="flex items-center gap-3 mt-2">
+              {!isUser && message.fallbackOccurred && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 font-medium">
+                  ⚠️ Fallback: {message.providerUsed || "?"}
+                </span>
+              )}
               {!isUser && (
                 <button
                   onClick={handleCopy}

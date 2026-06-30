@@ -27,14 +27,17 @@ const answer = async (question, userId, conversationId, llmOptions = {}) => {
     { role: "user", content: userPrompt },
   ];
 
-  const answerText = await generateResponse(messages, llmOptions);
+  const result = await generateResponse(messages, llmOptions);
 
   await conversationStore.addMessage(conversation._id, "user", question);
-  await conversationStore.addMessage(conversation._id, "assistant", answerText);
+  await conversationStore.addMessage(conversation._id, "assistant", result.text);
 
   return {
-    answer: answerText,
+    answer: result.text,
     conversationId: conversation._id,
+    providerUsed: result.providerUsed,
+    modelUsed: result.modelUsed,
+    fallbackOccurred: result.fallbackOccurred,
     sources: contextChunks.map((c) => ({
       text: c.text.slice(0, 200),
       score: c.combinedScore,
@@ -77,10 +80,18 @@ const answerStream = async (question, userId, conversationId, llmOptions = {}) =
 
   let fullAnswer = "";
 
-  await generateResponseStream(messages, llmOptions, (token) => {
+  const result = await generateResponseStream(messages, llmOptions, (token) => {
     fullAnswer += token;
     emitToUser(userId, "chat:token", { token, conversationId: conversation._id });
   });
+
+  if (result.fallbackOccurred) {
+    emitToUser(userId, "chat:fallback", {
+      conversationId: conversation._id,
+      fromProvider: result.attemptedProviders[0] || "unknown",
+      toProvider: result.providerUsed,
+    });
+  }
 
   await conversationStore.addMessage(conversation._id, "user", question);
   await conversationStore.addMessage(conversation._id, "assistant", fullAnswer);
@@ -89,11 +100,17 @@ const answerStream = async (question, userId, conversationId, llmOptions = {}) =
     conversationId: conversation._id,
     answer: fullAnswer,
     sources,
+    providerUsed: result.providerUsed,
+    modelUsed: result.modelUsed,
+    fallbackOccurred: result.fallbackOccurred,
   });
 
   return {
     answer: fullAnswer,
     conversationId: conversation._id,
+    providerUsed: result.providerUsed,
+    modelUsed: result.modelUsed,
+    fallbackOccurred: result.fallbackOccurred,
     sources,
   };
 };

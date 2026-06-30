@@ -8,8 +8,8 @@ const createRateLimiter = (windowMs = 15 * 60 * 1000, max = 100) => {
   return rateLimit({
     windowMs,
     max,
-    handler: (req, res) => {
-      throw new AppError("Too many requests, please try again later", 429);
+    handler: (req, res, next) => {
+      next(new AppError("Too many requests, please try again later", 429));
     },
   });
 };

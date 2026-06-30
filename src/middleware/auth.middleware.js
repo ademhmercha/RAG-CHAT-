@@ -21,7 +21,7 @@ const authMiddleware = async (req, res, next) => {
     if (user.disabled) {
       return next(new AppError("Account has been disabled", 403));
     }
-    req.user = decoded;
+    req.user = { id: user._id.toString(), email: user.email, role: user.role };
     next();
   } catch (err) {
     if (err instanceof AppError) return next(err);
