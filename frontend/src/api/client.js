@@ -57,4 +57,8 @@ export const health = {
   check: () => api.get("/health"),
 };
 
+export const llm = {
+  getProviders: () => api.get("/api/llm/providers"),
+};
+
 export default api;

@@ -80,14 +80,20 @@ Ollama automatically pulls `llama3.2` (2 GB) and `nomic-embed-text` (274 MB) on 
 | `PORT`                    | Server port                   | `3000`                      |
 | `MONGODB_URI`             | MongoDB connection string     | `mongodb://mongo:27017`     |
 | `JWT_SECRET`              | JWT signing secret            | —                           |
-| `OLLAMA_HOST`             | Ollama server URL             | `http://ollama:11434`       |
-| `OLLAMA_MODEL`            | LLM model name                | `llama3.2`                  |
-| `OLLAMA_EMBEDDING_MODEL`  | Embedding model name          | `nomic-embed-text`          |
-| `CHROMA_HOST`             | ChromaDB host                 | `chroma`                    |
-| `CHROMA_PORT`             | ChromaDB port                 | `8000`                      |
-| `REDIS_URL`               | Redis connection URL          | `redis://redis:6379`        |
-| `JWT_EXPIRES_IN`          | JWT expiration duration       | `7d`                        |
-| `MAX_FILE_SIZE`           | Max upload size in bytes      | `52428800` (50 MB)          |
+| `OLLAMA_HOST`             | Ollama server URL                      | `http://ollama:11434`              |
+| `OLLAMA_MODEL`            | LLM model name                        | `llama3.2`                         |
+| `OLLAMA_EMBEDDING_MODEL`  | Embedding model name                  | `nomic-embed-text`                 |
+| `GROQ_API_KEY`            | Groq API key (fallback #2)            | —                                  |
+| `GROQ_MODEL`              | Groq model name                       | `llama-3.3-70b-versatile`          |
+| `GEMINI_API_KEY`          | Google Gemini API key (fallback #3)   | —                                  |
+| `GEMINI_MODEL`            | Gemini model name                     | `gemini-2.5-flash`                 |
+| `OPENROUTER_API_KEY`      | OpenRouter API key (fallback #4)      | —                                  |
+| `OPENROUTER_MODEL`        | OpenRouter model                      | `meta-llama/llama-3.3-70b-instruct:free` |
+| `CHROMA_HOST`             | ChromaDB host                         | `chroma`                           |
+| `CHROMA_PORT`             | ChromaDB port                         | `8000`                             |
+| `REDIS_URL`               | Redis connection URL                  | `redis://redis:6379`               |
+| `JWT_EXPIRES_IN`          | JWT expiration duration               | `7d`                               |
+| `MAX_FILE_SIZE`           | Max upload size in bytes              | `52428800` (50 MB)                 |
 
 ## RAG Pipeline
 

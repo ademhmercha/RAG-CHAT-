@@ -8,7 +8,7 @@ const { generateResponse, generateResponseStream } = require("../llm/llmClient")
 const conversationStore = require("../memory/conversationStore");
 const { emitToUser } = require("../sockets/socket");
 
-const answer = async (question, userId, conversationId) => {
+const answer = async (question, userId, conversationId, llmOptions = {}) => {
   const conversation = await conversationStore.findOrCreate(conversationId, userId);
 
   const contextChunks = await retriever.retrieve(question, 5);
@@ -27,7 +27,7 @@ const answer = async (question, userId, conversationId) => {
     { role: "user", content: userPrompt },
   ];
 
-  const answerText = await generateResponse(messages);
+  const answerText = await generateResponse(messages, llmOptions);
 
   await conversationStore.addMessage(conversation._id, "user", question);
   await conversationStore.addMessage(conversation._id, "assistant", answerText);
@@ -44,7 +44,7 @@ const answer = async (question, userId, conversationId) => {
   };
 };
 
-const answerStream = async (question, userId, conversationId) => {
+const answerStream = async (question, userId, conversationId, llmOptions = {}) => {
   const conversation = await conversationStore.findOrCreate(conversationId, userId);
 
   const contextChunks = await retriever.retrieve(question, 5);
@@ -77,7 +77,7 @@ const answerStream = async (question, userId, conversationId) => {
 
   let fullAnswer = "";
 
-  await generateResponseStream(messages, {}, (token) => {
+  await generateResponseStream(messages, llmOptions, (token) => {
     fullAnswer += token;
     emitToUser(userId, "chat:token", { token, conversationId: conversation._id });
   });

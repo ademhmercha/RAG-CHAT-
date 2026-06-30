@@ -23,6 +23,7 @@ export default function Chat() {
   const [convTitle, setConvTitle] = useState("");
   const [renaming, setRenaming] = useState(false);
   const [renameInput, setRenameInput] = useState("");
+  const [llmOptions, setLlmOptions] = useState({});
   const renameRef = useRef(null);
   const messagesEndRef = useRef(null);
   const streamConvId = useRef(null);
@@ -172,13 +173,13 @@ export default function Chat() {
     setSending(true);
 
     try {
-      await chatApi.askStream({ question, conversationId });
+      await chatApi.askStream({ question, conversationId, ...llmOptions });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to get answer");
       setMessages((prev) => prev.slice(0, -1));
       setSending(false);
     }
-  }, [conversationId]);
+  }, [conversationId, llmOptions]);
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-64px)] lg:h-screen">
@@ -278,7 +279,7 @@ export default function Chat() {
       )}
 
       {(!conversationId || messages.length > 0 || !loadingConvo) && (
-        <ChatInput onSend={handleSend} loading={sending || loadingConvo} />
+        <ChatInput onSend={handleSend} loading={sending || loadingConvo} onProviderChange={setLlmOptions} />
       )}
     </div>
   );

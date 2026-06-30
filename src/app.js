@@ -13,6 +13,7 @@ const chatRoutes = require("./api/routes/chat.routes");
 const uploadRoutes = require("./api/routes/upload.routes");
 const documentRoutes = require("./api/routes/document.routes");
 const conversationRoutes = require("./api/routes/conversation.routes");
+const llmRoutes = require("./api/routes/llm.routes");
 
 const { errorMiddleware } = require("./middleware/error.middleware");
 const { loggerMiddleware } = require("./middleware/logger.middleware");
@@ -40,6 +41,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/llm", llmRoutes);
 
 // --- Central error handler ---
 app.use(errorMiddleware);

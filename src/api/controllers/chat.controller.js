@@ -6,10 +6,11 @@ const ragService = require("../../services/rag.service");
 const chatController = {
   async ask(req, res, next) {
     try {
-      const { question, conversationId } = req.body;
+      const { question, conversationId, provider, model, apiKey } = req.body;
       const userId = req.user.id;
+      const llmOptions = { provider, model, apiKey };
 
-      const result = await ragService.answer(question, userId, conversationId);
+      const result = await ragService.answer(question, userId, conversationId, llmOptions);
 
       res.json({
         success: true,
@@ -22,12 +23,13 @@ const chatController = {
 
   async askStream(req, res, next) {
     try {
-      const { question, conversationId } = req.body;
+      const { question, conversationId, provider, model, apiKey } = req.body;
       const userId = req.user.id;
+      const llmOptions = { provider, model, apiKey };
 
       res.json({ success: true, message: "Streaming started" });
 
-      ragService.answerStream(question, userId, conversationId).catch((err) => {
+      ragService.answerStream(question, userId, conversationId, llmOptions).catch((err) => {
         const { emitToUser } = require("../../sockets/socket");
         emitToUser(userId, "chat:error", { message: err.message || "Streaming failed", conversationId });
       });
