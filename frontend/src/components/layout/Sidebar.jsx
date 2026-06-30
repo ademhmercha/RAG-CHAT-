@@ -16,6 +16,7 @@ import {
   HiOutlineXMark,
   HiOutlinePencilSquare,
   HiOutlineShieldCheck,
+  HiOutlineArrowDownTray,
 } from "react-icons/hi2";
 import ConfirmDialog from "../ui/ConfirmDialog";
 
@@ -232,6 +233,14 @@ export default function Sidebar({ open, onClose }) {
               <span>{label}</span>
             </NavLink>
           ))}
+
+          <button
+            onClick={() => window.location.href = "/api/download/setup"}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <HiOutlineArrowDownTray className="w-4 h-4" />
+            <span>Download Desktop App</span>
+          </button>
 
           <div className="pt-2 mt-2 border-t border-[var(--border)]">
             <div className="flex items-center gap-2 px-3 py-2">

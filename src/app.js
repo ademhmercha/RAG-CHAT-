@@ -15,6 +15,7 @@ const documentRoutes = require("./api/routes/document.routes");
 const conversationRoutes = require("./api/routes/conversation.routes");
 const llmRoutes = require("./api/routes/llm.routes");
 const adminRoutes = require("./api/routes/admin.routes");
+const downloadRoutes = require("./api/routes/download.routes");
 
 const { errorMiddleware } = require("./middleware/error.middleware");
 const { loggerMiddleware } = require("./middleware/logger.middleware");
@@ -44,6 +45,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/llm", llmRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/download", downloadRoutes);
 
 // --- Central error handler ---
 app.use(errorMiddleware);
