@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
-    "lint": "eslint . --ext .js"
+    "lint": "eslint . --ext .js",
+    "promote": "node scripts/promote.js",
+    "seed:settings": "node scripts/seed-settings.js"
   },
   "keywords": [
     "rag",

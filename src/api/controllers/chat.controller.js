@@ -2,15 +2,18 @@
 // Receives a question from the user and delegates to the RAG service.
 
 const ragService = require("../../services/rag.service");
+const AuditLog = require("../../models/AuditLog");
 
 const chatController = {
   async ask(req, res, next) {
     try {
       const { question, conversationId, provider, model, apiKey } = req.body;
       const userId = req.user.id;
-      const llmOptions = { provider, model, apiKey };
+      const llmOptions = { provider, model, apiKey, userId };
 
       const result = await ragService.answer(question, userId, conversationId, llmOptions);
+
+      AuditLog.create({ userId, action: "chat", details: `Q: ${question?.slice(0, 200)}`, ip: req.ip }).catch(() => {});
 
       res.json({
         success: true,
@@ -25,7 +28,9 @@ const chatController = {
     try {
       const { question, conversationId, provider, model, apiKey } = req.body;
       const userId = req.user.id;
-      const llmOptions = { provider, model, apiKey };
+      const llmOptions = { provider, model, apiKey, userId };
+
+      AuditLog.create({ userId, action: "chat", details: `Q: ${question?.slice(0, 200)}`, ip: req.ip }).catch(() => {});
 
       res.json({ success: true, message: "Streaming started" });
 

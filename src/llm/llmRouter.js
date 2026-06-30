@@ -1,4 +1,5 @@
 const axios = require("axios");
+const UsageLog = require("../models/UsageLog");
 
 const PROVIDERS = {
   OLLAMA: "ollama",
@@ -294,26 +295,31 @@ const generateResponse = async (messages, options = {}) => {
     }
 
     console.warn(`[LLM Router] → ${provider}`);
+    const start = Date.now();
+    let cfg;
     try {
       let result;
       switch (provider) {
         case PROVIDERS.OLLAMA:
+          cfg = getConfig(provider, options);
           result = await callOllama(messages, options);
           break;
         case PROVIDERS.GROQ: {
-          const c = getConfig(provider, options);
-          result = await callOpenAI(c.baseUrl, c.apiKey, c.model, messages, options);
+          cfg = getConfig(provider, options);
+          result = await callOpenAI(cfg.baseUrl, cfg.apiKey, cfg.model, messages, options);
           break;
         }
         case PROVIDERS.GEMINI:
+          cfg = getConfig(provider, options);
           result = await callGemini(messages, options);
           break;
         case PROVIDERS.OPENROUTER: {
-          const c = getConfig(provider, options);
-          result = await callOpenAI(c.baseUrl, c.apiKey, c.model, messages, options);
+          cfg = getConfig(provider, options);
+          result = await callOpenAI(cfg.baseUrl, cfg.apiKey, cfg.model, messages, options);
           break;
         }
       }
+      await logUsage(provider, cfg?.model || "unknown", options, Date.now() - start, true);
       console.warn(`[LLM Router] ✓ ${provider}`);
       return result;
     } catch (err) {
@@ -321,6 +327,7 @@ const generateResponse = async (messages, options = {}) => {
         ? `HTTP ${err.response.status}`
         : err.code || err.message;
       const retry = isRetryable(err);
+      await logUsage(provider, cfg?.model || "unknown", options, Date.now() - start, false, reason);
       console.warn(`[LLM Router] ✗ ${provider} (${reason})${retry ? " → fallback" : " → abort"}`);
       errors.push({ provider, reason, status: err.response?.status });
       if (!retry || options.provider) break;
@@ -347,26 +354,31 @@ const generateResponseStream = async (messages, options = {}, onToken) => {
     }
 
     console.warn(`[LLM Router] → ${provider} (stream)`);
+    const start = Date.now();
+    let cfg;
     try {
       let result;
       switch (provider) {
         case PROVIDERS.OLLAMA:
+          cfg = getConfig(provider, options);
           result = await callOllamaStream(messages, options, onToken);
           break;
         case PROVIDERS.GROQ: {
-          const c = getConfig(provider, options);
-          result = await callOpenAIStream(c.baseUrl, c.apiKey, c.model, messages, options, onToken);
+          cfg = getConfig(provider, options);
+          result = await callOpenAIStream(cfg.baseUrl, cfg.apiKey, cfg.model, messages, options, onToken);
           break;
         }
         case PROVIDERS.GEMINI:
+          cfg = getConfig(provider, options);
           result = await callGeminiStream(messages, options, onToken);
           break;
         case PROVIDERS.OPENROUTER: {
-          const c = getConfig(provider, options);
-          result = await callOpenAIStream(c.baseUrl, c.apiKey, c.model, messages, options, onToken);
+          cfg = getConfig(provider, options);
+          result = await callOpenAIStream(cfg.baseUrl, cfg.apiKey, cfg.model, messages, options, onToken);
           break;
         }
       }
+      await logUsage(provider, cfg?.model || "unknown", options, Date.now() - start, true);
       console.warn(`[LLM Router] ✓ ${provider} (stream)`);
       return result;
     } catch (err) {
@@ -374,6 +386,7 @@ const generateResponseStream = async (messages, options = {}, onToken) => {
         ? `HTTP ${err.response.status}`
         : err.code || err.message;
       const retry = isRetryable(err);
+      await logUsage(provider, cfg?.model || "unknown", options, Date.now() - start, false, reason);
       console.warn(`[LLM Router] ✗ ${provider} (stream) (${reason})${retry ? " → fallback" : " → abort"}`);
       errors.push({ provider, reason, status: err.response?.status });
       if (!retry || options.provider) break;
@@ -382,6 +395,22 @@ const generateResponseStream = async (messages, options = {}, onToken) => {
 
   const detail = errors.map(e => `${e.provider}: ${e.reason}`).join("; ");
   throw new Error(`All LLM providers failed: ${detail}`);
+};
+
+const logUsage = async (provider, model, options, durationMs, success, error = null) => {
+  if (!options.userId) return;
+  try {
+    await UsageLog.create({
+      userId: options.userId,
+      provider,
+      model,
+      durationMs,
+      success,
+      error,
+    });
+  } catch (err) {
+    console.error("[UsageLog] Failed to log usage:", err.message);
+  }
 };
 
 const getProvidersInfo = () => PROVIDERS_INFO.map(p => ({

@@ -29,6 +29,7 @@ export const auth = {
   register: (data) => api.post("/api/auth/register", data),
   login: (data) => api.post("/api/auth/login", data),
   me: () => api.get("/api/auth/me"),
+  logout: () => api.post("/api/auth/logout"),
 };
 
 export const chat = {
@@ -59,6 +60,24 @@ export const health = {
 
 export const llm = {
   getProviders: () => api.get("/api/llm/providers"),
+};
+
+export const admin = {
+  getStats: () => api.get("/api/admin/stats"),
+  getUsers: (params) => api.get("/api/admin/users", { params }),
+  getUser: (id) => api.get(`/api/admin/users/${id}`),
+  updateUser: (id, data) => api.patch(`/api/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/api/admin/users/${id}`),
+  getUsage: (params) => api.get("/api/admin/usage", { params }),
+  getUsageSummary: () => api.get("/api/admin/usage/summary"),
+  getSettings: () => api.get("/api/admin/settings"),
+  updateSettings: (data) => api.put("/api/admin/settings", data),
+  getAudit: (params) => api.get("/api/admin/audit", { params }),
+  getAllDocuments: (params) => api.get("/api/admin/documents", { params }),
+  getChartUsage: () => api.get("/api/admin/chart/usage"),
+  getChartUsers: () => api.get("/api/admin/chart/users"),
+  getChartProviders: () => api.get("/api/admin/chart/providers"),
+  getChartDailyAudit: () => api.get("/api/admin/chart/daily-audit"),
 };
 
 export default api;

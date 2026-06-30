@@ -2,6 +2,7 @@
 // Handles file upload and triggers the ingestion pipeline.
 
 const uploadService = require("../../services/upload.service");
+const AuditLog = require("../../models/AuditLog");
 
 const uploadController = {
   async upload(req, res, next) {
@@ -14,6 +15,8 @@ const uploadController = {
       }
 
       const document = await uploadService.processUpload(file, userId);
+
+      AuditLog.create({ userId, action: "upload", details: file.originalname, ip: req.ip }).catch(() => {});
 
       res.status(201).json({
         success: true,
