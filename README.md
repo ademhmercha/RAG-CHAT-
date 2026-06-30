@@ -37,9 +37,13 @@ A fully local, free **Retrieval-Augmented Generation (RAG)** chat application wi
 
 ## Screenshots
 
-| Chat | Documents |
-|------|-----------|
-| ![Chat](frontend/public/rag%20chat%20page.png) | ![Documents](frontend/public/rag%20docments%20page.png) |
+| Chat | Documents | Admin Dashboard |
+|------|-----------|----------------|
+| ![Chat](frontend/public/rag%20chat%20page.png) | ![Documents](frontend/public/rag%20docments%20page.png) | ![Admin](frontend/public/admin%20dashboard.png) |
+
+| Model Selector | Usage Analytics |
+|----------------|-----------------|
+| ![Model](frontend/public/model%20tab.png) | ![Usage](frontend/public/usage%20.png) |
 
 ## Services
 
