@@ -1,5 +1,8 @@
 @echo off
 title RAG Assistant Installer
+set REPO_URL=https://github.com/ademhmercha/RAG-CHAT-
+set APP_DIR=rag-chat
+
 echo ============================================
 echo  RAG Assistant - Local Installation
 echo ============================================
@@ -13,7 +16,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [1/4] Checking Docker is running...
+echo [1/5] Checking Docker is running...
 docker info >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] Docker is not running. Please start Docker Desktop and try again.
@@ -22,7 +25,23 @@ if %errorlevel% neq 0 (
 )
 echo       OK
 
-echo [2/4] Creating .env from .env.example...
+echo [2/5] Downloading RAG Assistant...
+if exist "%APP_DIR%" (
+    echo       Folder already exists, pulling latest...
+    cd "%APP_DIR%"
+    git pull
+) else (
+    git clone "%REPO_URL%" "%APP_DIR%"
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to clone repository. Make sure Git is installed.
+        pause
+        exit /b 1
+    )
+    cd "%APP_DIR%"
+)
+echo       OK
+
+echo [3/5] Creating .env from .env.example...
 if not exist .env (
     if exist .env.example (
         copy .env.example .env >nul
@@ -34,7 +53,7 @@ if not exist .env (
     echo       .env already exists, skipping
 )
 
-echo [3/4] Building and starting containers...
+echo [4/5] Building and starting containers...
 docker compose up -d --build
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to start containers.
@@ -43,7 +62,7 @@ if %errorlevel% neq 0 (
 )
 echo       OK
 
-echo [4/4] Waiting for app to be ready...
+echo [5/5] Waiting for app to be ready...
 :waitloop
 timeout /t 2 /nobreak >nul
 curl -s http://localhost:3001 >nul 2>nul

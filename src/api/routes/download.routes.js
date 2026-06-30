@@ -1,11 +1,10 @@
 const { Router } = require("express");
 const path = require("path");
 const fs = require("fs");
-const { authMiddleware } = require("../../middleware/auth.middleware");
 
 const router = Router();
 
-router.get("/setup", authMiddleware, (req, res) => {
+router.get("/setup", (req, res) => {
   const ua = (req.headers["user-agent"] || "").toLowerCase();
   const isWindows = ua.includes("windows") || ua.includes("win64");
   const fileName = isWindows ? "install.bat" : "install.sh";
