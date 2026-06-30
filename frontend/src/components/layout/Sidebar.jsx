@@ -39,6 +39,23 @@ export default function Sidebar({ open, onClose }) {
   const [renamingId, setRenamingId] = useState(null);
   const [renameInput, setRenameInput] = useState("");
   const renameRef = useRef(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+  };
 
   const fetchConvos = useCallback(async () => {
     try {
@@ -234,13 +251,15 @@ export default function Sidebar({ open, onClose }) {
             </NavLink>
           ))}
 
-          <button
-            onClick={() => window.location.href = "/api/download/setup"}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <HiOutlineArrowDownTray className="w-4 h-4" />
-            <span>Download Desktop App</span>
-          </button>
+          {deferredPrompt && (
+            <button
+              onClick={handleInstall}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[var(--accent)] hover:bg-[var(--bg-card)] transition-colors"
+            >
+              <HiOutlineArrowDownTray className="w-4 h-4" />
+              <span>Install App</span>
+            </button>
+          )}
 
           <div className="pt-2 mt-2 border-t border-[var(--border)]">
             <div className="flex items-center gap-2 px-3 py-2">
